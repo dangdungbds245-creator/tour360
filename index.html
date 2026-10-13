@@ -146,11 +146,25 @@ const $ = id => document.getElementById(id);
 // Dự án có sẵn: hiển thị cho người mở link lần đầu
 const DEFAULTS = [
   {id:'sun-galaxy', name:'Sun Galaxy Complex', note:'', url:'https://kuula.co/share/collection/7THrc'},
-  {id:'fours-tower', name:'Fours Tower', note:'', url:'https://kuula.co/share/LTTwZ?logo=1&info=1&fs=0&vr=0&gyro=0&thumbs=1&keys=0'}
+  {id:'fours-tower', name:'Fours Tower', note:'', url:'https://kuula.co/share/LTTwZ?logo=1&info=1&fs=0&vr=0&gyro=0&thumbs=1&keys=0'},
+  {id:'spana-tower', name:'Spana Tower', note:'', url:'https://kuula.co/share/hVKVY?logo=1&info=1&fs=1&vr=0&sd=1&thumbs=1'},
+  {id:'cora-tower', name:'Cora Tower', note:'', url:'https://kuula.co/share/h21k4?logo=1&info=1&fs=1&vr=0&sd=1&thumbs=1'},
+  {id:'sun-river-polis', name:'Sun River Polis', note:'', url:'https://kuula.co/share/hsdvB?logo=1&info=1&fs=1&vr=0&sd=1&thumbs=1'},
+  {id:'symphony-5', name:'Symphony 5', note:'', url:'https://kuula.co/share/collection/7MjrB'},
+  {id:'capital-square', name:'Capital Square', note:'', url:'https://momento360.com/e/u/69b91cf693694101888a56341dd535d1?heading=-90.36&pitch=-6.54&field-of-view=75&size=medium&display-plan=true'},
+  {id:'s-light-tower', name:'S-Light Tower', note:'', url:'https://kuula.co/share/collection/7TqX8?logo=1&info=1&fs=0&vr=0&gyro=0&thumbs=1&keys=0'}
 ];
 let items = load(), current = null, pendingDel = null, editing = null;
 
-function load(){ try{ const s = localStorage.getItem(KEY); return s ? JSON.parse(s) : DEFAULTS.map(p=>({...p})); }catch(e){ return DEFAULTS.map(p=>({...p})); } }
+function removedIds(){ try{ return JSON.parse(localStorage.getItem(KEY+'.removed')) || []; }catch(e){ return []; } }
+function load(){
+  let list = null;
+  try{ list = JSON.parse(localStorage.getItem(KEY)); }catch(e){}
+  if (!Array.isArray(list)) return DEFAULTS.map(p=>({...p}));
+  const have = new Set(list.map(p=>p.id)), gone = new Set(removedIds());
+  for (const d of DEFAULTS) if (!have.has(d.id) && !gone.has(d.id)) list.push({...d});
+  return list;
+}
 function persist(){ try{ localStorage.setItem(KEY, JSON.stringify(items)); }catch(e){ toast('Không lưu được trên trình duyệt này'); } }
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1800); }
@@ -219,6 +233,7 @@ $('list').addEventListener('click', e => {
   if (act === 'del'){
     if (pendingDel === id){
       items = items.filter(x => x.id !== id); persist(); pendingDel = null;
+      if (DEFAULTS.some(d=>d.id===id)) try{ localStorage.setItem(KEY+'.removed', JSON.stringify([...removedIds(), id])); }catch(e){}
       if (current === id){ current = null; $('frame').querySelector('iframe')?.remove(); $('welcome').hidden = false;
         $('curName').textContent='Chưa chọn dự án'; $('curNote').textContent=''; $('newtab').hidden=true; $('copy').disabled=$('full').disabled=true; }
       toast('Đã xoá'); render();
